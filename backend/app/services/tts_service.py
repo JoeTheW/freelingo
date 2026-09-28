@@ -1,5 +1,7 @@
 import time
 
+import asyncio
+
 import httpx
 import openai
 
@@ -107,3 +109,37 @@ class OpenAITTSService:
             request_id,
         )
         return audio
+
+class CustomHttpTTSService:
+    ALLOWED_VOICES = {"sharvard", "davefx"}
+
+    def __init__(self, base_url: str, voice: str) -> None:
+        self.base_url = base_url.rstrip("/")
+        self.voice = voice if voice in self.ALLOWED_VOICES else "sharvard"
+        # /speak writes one shared output.wav — serialize requests so concurrent
+        # synthesize() calls can't clobber each other's file before /download reads it.
+        self._lock = asyncio.Lock()
+
+    async def health(self) -> None:
+        async with httpx.AsyncClient() as client:
+            r = await client.get(f"{self.base_url}/health", timeout=5.0)
+            r.raise_for_status()
+
+    async def synthesize(
+        self, text: str, voice: str | None = None, language: str | None = None
+    ) -> bytes:
+        _ = language  # this engine has no language param
+        selected = voice if voice in self.ALLOWED_VOICES else self.voice
+
+        async with self._lock:
+            async with httpx.AsyncClient() as client:
+                speak_resp = await client.post(
+                    f"{self.base_url}/speak/advanced",
+                    json={"text": text, "voice": selected, "play": False, "wait": True},
+                    timeout=30.0,
+                )
+                speak_resp.raise_for_status()
+
+                download_resp = await client.get(f"{self.base_url}/download", timeout=30.0)
+                download_resp.raise_for_status()
+                return download_resp.content  # WAV bytes

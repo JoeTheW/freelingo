@@ -8,7 +8,7 @@ describe('buildConversationWsUrl', () => {
     vi.stubGlobal('window', {
       location: {
         protocol: 'http:',
-        host: 'localhost:3000',
+        host: 'localhost:3131',
       },
     })
   })
@@ -33,7 +33,7 @@ describe('buildConversationWsUrl', () => {
   it('derives ws:// from window.location when NEXT_PUBLIC_API_URL is empty', () => {
     process.env.NEXT_PUBLIC_API_URL = ''
     const url = buildConversationWsUrl()
-    expect(url).toBe('ws://localhost:3000/ws/conversation')
+    expect(url).toBe('ws://localhost:3131/ws/conversation')
   })
 
   it('derives wss:// from window.location when on https', () => {

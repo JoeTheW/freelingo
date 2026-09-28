@@ -24,12 +24,12 @@ security add-generic-password -a secretkey -s freelingo -w "$(openssl rand -hex 
 
 This launches 4 containers with hot-reload:
 
-| Service    | URL                    | Source mounted |
-|------------|------------------------|----------------|
-| Frontend   | http://localhost:3000  | `./frontend`   |
-| Backend    | http://localhost:8000  | `./backend`    |
-| PostgreSQL | `localhost:5432`       | —              |
-| Redis      | `localhost:6379`       | —              |
+| Service    | URL                   | Source mounted |
+| ---------- | --------------------- | -------------- |
+| Frontend   | http://localhost:3131 | `./frontend`   |
+| Backend    | http://localhost:8000 | `./backend`    |
+| PostgreSQL | `localhost:5432`      | —              |
+| Redis      | `localhost:6379`      | —              |
 
 ## How it works
 

@@ -29,6 +29,7 @@ MAX_CONTEXT_TOKENS = {
     "anthropic": 200000,
     "deepseek": 128000,
     "ollama": 8192,
+    "openrouter": 128000,
 }
 
 
@@ -547,6 +548,12 @@ class LLMAdapter:
             )
             self.client = None
             self.model = settings.ANTHROPIC_MODEL
+        elif self.provider == "openrouter":
+            self.client = AsyncOpenAI(
+                base_url="https://openrouter.ai/api/v1",
+                api_key=settings.OPENROUTER_API_KEY,
+            )
+            self.model = settings.OPENROUTER_MODEL
 
     async def _call_with_retry(self, fn, *args, tools_requested: bool = False, **kwargs):
         last_error = None

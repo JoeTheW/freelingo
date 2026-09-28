@@ -21,7 +21,10 @@ class Settings(BaseSettings):
     ANTHROPIC_MAX_TOKENS: int = 8192
     DEEPSEEK_API_KEY: str = ""
     DEEPSEEK_MODEL: str = "deepseek-chat"
-    TTS_PROVIDER: str = "local"  # local | openai
+    OPENROUTER_API_KEY: str = ""
+    OPENROUTER_MODEL: str = "qwen/qwen3.7-flash"
+    OPENROUTER_STT_MODEL: str = "openai/whisper-1"
+    TTS_PROVIDER: str = "local"  # local | openai | custom
     TTS_BASE_URL: str = "http://kokoro:8880"
     TTS_VOICE: str = "af_heart"
     OPENAI_TTS_MODEL: str = "tts-1"
@@ -31,7 +34,7 @@ class Settings(BaseSettings):
     STT_BASE_URL: str = "http://whisper:9000"
     OPENAI_STT_MODEL: str = "whisper-1"
     RATE_LIMIT_ENABLED: bool = True
-    CORS_ORIGINS: list[str] = ["http://localhost:3000"]
+    CORS_ORIGINS: list[str] = ["http://localhost:3131"]
     COOKIE_SECURE: bool = False
     LOG_LEVEL: str = "INFO"
 
@@ -61,7 +64,7 @@ class Settings(BaseSettings):
     STRIPE_PRICE_MONTHLY: str = ""
     STRIPE_PRICE_YEARLY: str = ""
     STRIPE_TRIAL_DAYS: int = 7
-    STRIPE_BASE_URL: str = "http://localhost:3000"
+    STRIPE_BASE_URL: str = "http://localhost:3131"
 
     # Display prices (shown on landing page and paywall banner)
     PRICE_MONTHLY: float = 0.0
@@ -79,7 +82,7 @@ class Settings(BaseSettings):
     SMTP_FROM: str = "noreply@freelingo.app"
     SMTP_TLS: bool = True
     SMTP_SSL: bool = False
-    APP_BASE_URL: str = "http://localhost:3000"
+    APP_BASE_URL: str = "http://localhost:3131"
 
     # Listening — path where generated MP3 files are stored (Docker volume)
     AUDIO_STORAGE_PATH: str = "/data/audio"

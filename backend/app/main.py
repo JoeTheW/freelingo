@@ -52,7 +52,7 @@ from app.routers import (
 from app.routers import config as config_router
 from app.routers import health as health_router
 from app.services.stt_service import OpenAISTTService, WhisperSTTService
-from app.services.tts_service import KokoroTTSService, OpenAITTSService
+from app.services.tts_service import CustomHttpTTSService, KokoroTTSService, OpenAITTSService
 
 
 def _run_migrations() -> None:
@@ -88,6 +88,8 @@ async def lifespan(app: FastAPI):  # noqa: ANN201
             voice=settings.OPENAI_TTS_VOICE,
             speed=settings.OPENAI_TTS_SPEED,
         )
+    elif settings.TTS_PROVIDER == "custom":
+        app.state.tts_service = CustomHttpTTSService(settings.TTS_BASE_URL, settings.TTS_VOICE)
     else:
         app.state.tts_service = KokoroTTSService(settings.TTS_BASE_URL, settings.TTS_VOICE)
 
@@ -97,6 +99,12 @@ async def lifespan(app: FastAPI):  # noqa: ANN201
         app.state.stt_service = OpenAISTTService(
             api_key=settings.OPENAI_API_KEY,
             model=settings.OPENAI_STT_MODEL,
+        )
+    elif settings.STT_PROVIDER == "openrouter":
+        app.state.stt_service = OpenAISTTService(
+            api_key=settings.OPENROUTER_API_KEY,
+            model=settings.OPENROUTER_STT_MODEL,
+            base_url="https://openrouter.ai/api/v1",
         )
     else:
         app.state.stt_service = WhisperSTTService(settings.STT_BASE_URL)

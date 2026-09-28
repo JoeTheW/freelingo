@@ -121,7 +121,7 @@ ollama pull gemma4:e4b
 docker compose up -d
 ```
 
-Access at `http://localhost:3000` (or `http://<server-ip>:3000`).
+Access at `http://localhost:3131` (or `http://<server-ip>:3131`).
 By default, the first registered user becomes an administrator; set `FIRST_USER_IS_ADMIN=false` to
 disable this behavior.
 
@@ -134,7 +134,7 @@ disable this behavior.
 3. Add the variables from `.env.example`. At minimum, configure `DATA_PATH`, the `POSTGRES_*` values,
    `REDIS_PASSWORD`, `SECRET_KEY`, and the selected LLM and speech providers and credentials.
 4. Click **Deploy the stack**.
-5. Access the app at `http://<server-ip>:3000`. Database migrations run automatically when the backend starts.
+5. Access the app at `http://<server-ip>:3131`. Database migrations run automatically when the backend starts.
 
 > **Tip:** If Ollama runs on the same host as Portainer, set `OLLAMA_BASE_URL=http://host.docker.internal:11434`. On Linux you may need to add the `extra_hosts` entry in the compose file (already included by default).
 
