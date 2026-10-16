@@ -340,6 +340,7 @@ export default function ConversationMode({
 
   // ─── Refs ─────────────────────────────────────────────────────────────────
   const wsRef = useRef<WebSocket | null>(null)
+  const wakeLockRef = useRef<WakeLockSentinel | null>(null)
   const audioCtxRef = useRef<AudioContext | null>(null)
   const audioQueueRef = useRef<AudioQueue | null>(null)
   const transcriptIdRef = useRef(0)
@@ -361,6 +362,28 @@ export default function ConversationMode({
     'unknown'
   )
   const sessionStartedAtRef = useRef<number | null>(null)
+
+  // ─── Screen Wake Lock ───────────────────────────────────────────────────
+  useEffect(() => {
+    if (status === 'live') {
+      if ('wakeLock' in navigator) {
+        ;(navigator as any).wakeLock
+          .request('screen')
+          .then((lock: WakeLockSentinel) => {
+            wakeLockRef.current = lock
+            lock.addEventListener('release', () => {
+              wakeLockRef.current = null
+            })
+          })
+          .catch((err: unknown) =>
+            convLogger.warn('wake lock failed', { err })
+          )
+      }
+    } else if (wakeLockRef.current) {
+      wakeLockRef.current.release().catch(() => {})
+      wakeLockRef.current = null
+    }
+  }, [status])
 
   useEffect(() => {
     assistantSpeakingRef.current = assistantSpeaking
