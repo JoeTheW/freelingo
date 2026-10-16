@@ -165,7 +165,11 @@ async def login(
     db: AsyncSession = Depends(get_db),
     redis: Redis = Depends(get_redis),
 ):
-    result = await db.execute(select(User).where(User.email == data.email))
+    result = await db.execute(
+        select(User).where(
+            (User.email == data.identifier) | (User.username == data.identifier)
+        )
+    )
     user = result.scalar_one_or_none()
 
     # Always run bcrypt to prevent timing-based user enumeration

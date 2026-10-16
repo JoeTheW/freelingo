@@ -49,7 +49,7 @@ function LoginForm() {
         const res = await apiFetch('/api/auth/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password }),
+          body: JSON.stringify({ identifier: email, password }),
         })
         if (!res.ok) {
           const data = await res.json().catch(() => ({}))
@@ -57,6 +57,7 @@ function LoginForm() {
             const first = data.detail[0] as { loc?: string[]; msg?: string }
             const loc = (first.loc ?? []).join('.')
             if (
+              loc.includes('identifier') ||
               loc.includes('email') ||
               first.msg?.toLowerCase().includes('email')
             ) {

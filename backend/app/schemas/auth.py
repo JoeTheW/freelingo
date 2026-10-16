@@ -121,7 +121,7 @@ class RegisterRequest(BaseModel):
 
 
 class LoginRequest(BaseModel):
-    email: EmailStr
+    identifier: str = Field(min_length=1, max_length=200)
     password: str = Field(min_length=1, max_length=25)
 
 
