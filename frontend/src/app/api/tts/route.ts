@@ -48,7 +48,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     incomingTraceId ||
     `tts-${crypto.randomUUID()}`
   const outHeaders = new Headers()
-  outHeaders.set('Content-Type', 'audio/mpeg')
+  // Forward the backend's Content-Type (audio/mpeg for OpenAI/Kokoro, audio/wav for Piper)
+  const backendContentType = backendRes.headers.get('Content-Type') || 'audio/mpeg'
+  outHeaders.set('Content-Type', backendContentType)
   outHeaders.set('X-TTS-Trace-ID', traceId)
   outHeaders.set('X-TTS-Proxy-Fetch-Ms', fetchMs.toFixed(1))
   outHeaders.set('X-TTS-Proxy-Buffer-Ms', bufferMs.toFixed(1))

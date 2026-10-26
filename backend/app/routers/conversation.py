@@ -220,6 +220,8 @@ async def conversation_ws(
             )
             if voice_pref not in _VALID_VOICES:
                 voice_pref = ""
+        elif settings.TTS_PROVIDER == "piper":
+            pass  # Piper does its own fuzzy matching — forward the pref as-is
         else:
             voice_pref = ""  # local TTS ignores voice param
         payload = decode_access_token(token)

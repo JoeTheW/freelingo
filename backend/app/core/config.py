@@ -22,9 +22,9 @@ class Settings(BaseSettings):
     DEEPSEEK_API_KEY: str = ""
     DEEPSEEK_MODEL: str = "deepseek-chat"
     OPENROUTER_API_KEY: str = ""
-    OPENROUTER_MODEL: str = "qwen/qwen3.7-flash"
+    OPENROUTER_MODEL: str = "google/gemini-2.5-flash-lite"
     OPENROUTER_STT_MODEL: str = "openai/whisper-1"
-    TTS_PROVIDER: str = "local"  # local | openai | custom
+    TTS_PROVIDER: str = "local"  # local | openai | custom | piper
     TTS_BASE_URL: str = "http://kokoro:8880"
     TTS_VOICE: str = "af_heart"
     OPENAI_TTS_MODEL: str = "tts-1"

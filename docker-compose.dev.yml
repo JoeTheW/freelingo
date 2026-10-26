@@ -32,7 +32,7 @@ services:
     build: ./backend
     container_name: freelingo-backend
     ports:
-      - "127.0.0.1:8000:8000"
+      - "8000:8000"
     restart: unless-stopped
     command: >
       sh -c "cd /tmp && PYTHONPATH=/app alembic -c /app/alembic.ini upgrade head && cd /app && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
@@ -54,7 +54,7 @@ services:
       ANTHROPIC_MODEL: ${ANTHROPIC_MODEL}
       ANTHROPIC_MAX_TOKENS: ${ANTHROPIC_MAX_TOKENS:-8192}
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
-      OPENROUTER_MODEL: ${OPENROUTER_MODEL:-qwen/qwen3.7-flash}
+      OPENROUTER_MODEL: ${OPENROUTER_MODEL:-google/gemini-2.5-flash-lite}
       OPENROUTER_STT_MODEL: ${OPENROUTER_STT_MODEL:-openai/whisper-1}
       DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY}
       DEEPSEEK_MODEL: ${DEEPSEEK_MODEL}
@@ -136,3 +136,16 @@ services:
       - "3131:3000"
     depends_on:
       - backend
+
+  # Piper TTS ─────────────────────────────────────────────────────
+  # Required when TTS_PROVIDER=piper.
+  # Voices are mounted from a local directory; download more from
+  # https://huggingface.co/rhasspy/piper-voices
+  piper:
+    image: joew9993/piper-docker-2:latest
+    container_name: freelingo-piper
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    volumes:
+      - ${PIPER_VOICES_PATH:-./piper-voices}:/voices

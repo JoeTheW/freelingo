@@ -18,6 +18,7 @@ interface ConfigStore {
   freemiumTrialEnabled: boolean
   ttsProvider: string
   openaiTtsVoice: string
+  ttsVoiceSelectable: boolean
   maintenanceMode: boolean
   priceMonthly: number
   priceYearly: number
@@ -35,6 +36,7 @@ export const useConfigStore = create<ConfigStore>((set, get) => ({
   freemiumTrialEnabled: true,
   ttsProvider: 'local',
   openaiTtsVoice: 'nova',
+  ttsVoiceSelectable: false,
   maintenanceMode: false,
   priceMonthly: 0.0,
   priceYearly: 0.0,
@@ -55,6 +57,7 @@ export const useConfigStore = create<ConfigStore>((set, get) => ({
         freemiumTrialEnabled: data.freemium_trial_enabled ?? true,
         ttsProvider: data.tts_provider ?? 'local',
         openaiTtsVoice: data.openai_tts_voice ?? 'nova',
+        ttsVoiceSelectable: data.tts_voice_selectable ?? false,
         maintenanceMode: data.maintenance_mode ?? false,
         priceMonthly: data.price_monthly ?? 0.0,
         priceYearly: data.price_yearly ?? 0.0,

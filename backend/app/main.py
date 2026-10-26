@@ -52,7 +52,7 @@ from app.routers import (
 from app.routers import config as config_router
 from app.routers import health as health_router
 from app.services.stt_service import OpenAISTTService, WhisperSTTService
-from app.services.tts_service import CustomHttpTTSService, KokoroTTSService, OpenAITTSService
+from app.services.tts_service import CustomHttpTTSService, KokoroTTSService, OpenAITTSService, PiperTTSService
 
 
 def _run_migrations() -> None:
@@ -88,6 +88,8 @@ async def lifespan(app: FastAPI):  # noqa: ANN201
             voice=settings.OPENAI_TTS_VOICE,
             speed=settings.OPENAI_TTS_SPEED,
         )
+    elif settings.TTS_PROVIDER == "piper":
+        app.state.tts_service = PiperTTSService(settings.TTS_BASE_URL, settings.TTS_VOICE)
     elif settings.TTS_PROVIDER == "custom":
         app.state.tts_service = CustomHttpTTSService(settings.TTS_BASE_URL, settings.TTS_VOICE)
     else:

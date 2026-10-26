@@ -146,6 +146,19 @@ services:
               count: 1
               capabilities: [gpu]
 
+  # Piper TTS ─────────────────────────────────────────────────────
+  # Required when TTS_PROVIDER=piper.
+  # Voices are mounted from a local directory; download more from
+  # https://huggingface.co/rhasspy/piper-voices
+  piper:
+    image: joew9993/piper-docker-2:latest
+    container_name: freelingo-piper
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    volumes:
+      - ${PIPER_VOICES_PATH:-./piper-voices}:/voices
+
   # STT (faster-whisper) ──────────────────────────────────────────
   # Only required when STT_PROVIDER=local (default).
   # Set STT_PROVIDER=openai to use OpenAI Whisper API instead — no local service needed.

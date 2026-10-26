@@ -10,6 +10,16 @@ from app.core.app_logger import get_logger
 logger = get_logger(__name__)
 
 
+def _strip_tts_artifacts(text: str) -> str:
+    """Remove characters that should never be spoken by TTS.
+
+    Currently strips asterisk characters (`*`) which appear in LLM
+    markdown bold markers (`` **text** ``) and get read literally as
+    "asterisk asterisk" by speech engines.
+    """
+    return text.replace("*", "")
+
+
 class KokoroTTSService:
     def __init__(self, base_url: str, voice: str) -> None:
         self.base_url = base_url
@@ -25,6 +35,7 @@ class KokoroTTSService:
         self, text: str, voice: str | None = None, language: str | None = None
     ) -> bytes:
         """Call Kokoro-FastAPI and return MP3 audio bytes."""
+        text = _strip_tts_artifacts(text)
         _ = language  # Kokoro handles language via the voice model itself
         async with httpx.AsyncClient() as client:
             response = await client.post(
@@ -39,6 +50,54 @@ class KokoroTTSService:
             )
             response.raise_for_status()
             return response.content
+
+
+class PiperTTSService:
+    """TTS adapter for piper-docker (Flask-based Piper TTS container).
+
+    Piper exposes:
+      GET  {base_url}/voices    -> JSON {voices: [{file, id, name, language, ...}]}
+      GET  {base_url}/health    -> JSON {status, voices_count, ...}
+      POST {base_url}/speak     -> body {text, voice} -> audio/wav bytes
+    """
+
+    def __init__(self, base_url: str, voice: str) -> None:
+        self.base_url = base_url.rstrip("/")
+        self.voice = voice  # default voice name (id or filename stem)
+
+    async def health(self) -> None:
+        async with httpx.AsyncClient() as client:
+            r = await client.get(f"{self.base_url}/health", timeout=5.0)
+            r.raise_for_status()
+
+    async def list_voices(self) -> list[dict]:
+        """Fetch available voices from the Piper voices endpoint."""
+        async with httpx.AsyncClient() as client:
+            r = await client.get(f"{self.base_url}/voices", timeout=10.0)
+            r.raise_for_status()
+            data = r.json()
+            return data.get("voices", [])
+
+    async def synthesize(
+        self, text: str, voice: str | None = None, language: str | None = None
+    ) -> bytes:
+        """Call Piper /speak and return WAV audio bytes."""
+        text = _strip_tts_artifacts(text)
+        _ = language  # Piper handles language via the voice model itself
+        selected = voice or self.voice
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                f"{self.base_url}/speak",
+                json={"text": text, "voice": selected},
+                timeout=60.0,
+            )
+            response.raise_for_status()
+            return response.content
+
+    @property
+    def media_type(self) -> str:
+        """Piper always returns WAV audio."""
+        return "audio/wav"
 
 
 class OpenAITTSService:
@@ -66,6 +125,7 @@ class OpenAITTSService:
         """Call OpenAI TTS API and return MP3 audio bytes."""
         _ = language
         text = text.strip()
+        text = _strip_tts_artifacts(text)
         if not text:
             logger.warning("[tts-openai] Empty text received for synthesis")
             return b""
@@ -129,6 +189,7 @@ class CustomHttpTTSService:
         self, text: str, voice: str | None = None, language: str | None = None
     ) -> bytes:
         _ = language  # this engine has no language param
+        text = _strip_tts_artifacts(text)
         selected = voice if voice in self.ALLOWED_VOICES else self.voice
 
         async with self._lock:
