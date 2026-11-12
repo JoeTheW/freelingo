@@ -23,3 +23,41 @@
 2026-11-12 14:49:15 INFO httpx: HTTP Request: POST http://piper:5000/speak "HTTP/1.1 200 OK"
 2026-11-12 14:49:15 INFO app.routers.tts: [tts] audio_bytes=111776 provider='PiperTTSService' synth_ms=873.9 text_len=34 total_ms=873.9 trace='tts-mwdnyo9w-ylakx7' user_id=2
 2026-11-12 14:49:37 INFO httpx2: HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+2026-11-12 14:50:35 INFO httpx: HTTP Request: POST http://piper:5000/speak "HTTP/1.1 200 OK"
+2026-11-12 14:50:35 INFO app.routers.tts: [tts] audio_bytes=79520 provider='PiperTTSService' synth_ms=772.8 text_len=30 total_ms=772.8 trace='tts-mwdo0e7o-zj6xzm' user_id=2
+2026-11-12 14:50:36 INFO httpx: HTTP Request: POST http://piper:5000/speak "HTTP/1.1 200 OK"
+2026-11-12 14:50:36 INFO app.routers.tts: [tts] audio_bytes=79008 provider='PiperTTSService' synth_ms=819.5 text_len=30 total_ms=819.5 trace='tts-mwdo0fff-tofmil' user_id=2
+2026-11-12 14:50:40 INFO httpx: HTTP Request: POST http://piper:5000/speak "HTTP/1.1 200 OK"
+2026-11-12 14:50:40 INFO app.routers.tts: [tts] audio_bytes=124064 provider='PiperTTSService' synth_ms=895.4 text_len=42 total_ms=895.4 trace='tts-mwdo0hxf-6236ba' user_id=2
+2026-11-12 14:50:44 INFO httpx: HTTP Request: POST http://piper:5000/speak "HTTP/1.1 200 OK"
+2026-11-12 14:50:44 INFO app.routers.tts: [tts] audio_bytes=84128 provider='PiperTTSService' synth_ms=814.1 text_len=30 total_ms=814.1 trace='tts-mwdo0l8b-004bua' user_id=2
+2026-11-12 14:50:50 INFO httpx: HTTP Request: POST http://piper:5000/speak "HTTP/1.1 200 OK"
+2026-11-12 14:50:50 INFO app.routers.tts: [tts] audio_bytes=154784 provider='PiperTTSService' synth_ms=1021.7 text_len=55 total_ms=1021.7 trace='tts-mwdo0pqr-6ydwvu' user_id=2
+2026-11-12 14:58:06 INFO alembic.runtime.migration: Context impl PostgresqlImpl.
+2026-11-12 14:58:06 INFO alembic.runtime.migration: Will assume transactional DDL.
+2026-11-12 14:58:46 INFO alembic.runtime.migration: Context impl PostgresqlImpl.
+2026-11-12 14:58:46 INFO alembic.runtime.migration: Will assume transactional DDL.
+2026-11-12 15:01:54 INFO alembic.runtime.migration: Context impl PostgresqlImpl.
+2026-11-12 15:01:54 INFO alembic.runtime.migration: Will assume transactional DDL.
+2026-11-12 15:02:44 INFO alembic.runtime.migration: Context impl PostgresqlImpl.
+2026-11-12 15:02:44 INFO alembic.runtime.migration: Will assume transactional DDL.
+2026-11-12 15:05:49 INFO alembic.runtime.migration: Context impl PostgresqlImpl.
+2026-11-12 15:05:49 INFO alembic.runtime.migration: Will assume transactional DDL.
+2026-11-12 15:06:13 INFO alembic.runtime.migration: Context impl PostgresqlImpl.
+2026-11-12 15:06:13 INFO alembic.runtime.migration: Will assume transactional DDL.
+2026-11-12 15:07:14 INFO alembic.runtime.migration: Context impl PostgresqlImpl.
+2026-11-12 15:07:14 INFO alembic.runtime.migration: Will assume transactional DDL.
+2026-11-12 15:07:32 INFO httpx2: HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+2026-11-12 15:10:56 INFO alembic.runtime.migration: Context impl PostgresqlImpl.
+2026-11-12 15:10:56 INFO alembic.runtime.migration: Will assume transactional DDL.
+2026-11-12 15:11:01 INFO alembic.runtime.migration: Context impl PostgresqlImpl.
+2026-11-12 15:11:01 INFO alembic.runtime.migration: Will assume transactional DDL.
+2026-11-12 15:11:22 INFO alembic.runtime.migration: Context impl PostgresqlImpl.
+2026-11-12 15:11:22 INFO alembic.runtime.migration: Will assume transactional DDL.
+2026-11-12 15:13:03 INFO alembic.runtime.migration: Context impl PostgresqlImpl.
+2026-11-12 15:13:03 INFO alembic.runtime.migration: Will assume transactional DDL.
+2026-11-12 15:13:49 INFO httpx2: HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+2026-11-12 15:14:06 INFO httpx: HTTP Request: POST http://piper:5000/speak "HTTP/1.1 200 OK"
+2026-11-12 15:14:06 INFO app.routers.tts: [tts] audio_bytes=119456 provider='PiperTTSService' synth_ms=1825.2 text_len=38 total_ms=1825.2 trace='tts-mwdoumi5-fsxguj' user_id=2
+2026-11-12 15:14:15 INFO httpx: HTTP Request: POST http://piper:5000/speak "HTTP/1.1 200 OK"
+2026-11-12 15:14:15 INFO app.routers.tts: [tts] audio_bytes=119968 provider='PiperTTSService' synth_ms=893.8 text_len=45 total_ms=893.8 trace='tts-mwdouu44-kxvkin' user_id=2

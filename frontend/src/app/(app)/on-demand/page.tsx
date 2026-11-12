@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { apiFetch } from '@/lib/api'
@@ -10,6 +11,14 @@ import { cn } from '@/lib/utils'
 const LESSON_TYPES = ['grammar', 'vocabulary', 'reading', 'writing', 'listening', 'speaking', 'review']
 const CEFR_LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2']
 
+interface HistoryItem {
+  id: number
+  title: string
+  lesson_type: string
+  cefr_level: string
+  is_completed: boolean
+  completed_at: string | null
+}
 export default function OnDemandLessonPage() {
   const tPlan = useTranslations('plan')
   const router = useRouter()
@@ -21,7 +30,24 @@ export default function OnDemandLessonPage() {
   const [generating, setGenerating] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  const [history, setHistory] = useState<HistoryItem[]>([])
+  const [historyLoaded, setHistoryLoaded] = useState(false)
+  const [deletingId, setDeletingId] = useState<number | null>(null)
+
   const canGenerate = query.trim().length > 0 && !generating
+
+  async function loadHistory() {
+    try {
+      const res = await apiFetch('/api/lessons/on-demand-history')
+      if (res.ok) {
+        setHistory(await res.json())
+      }
+    } catch {
+      // silent - best-effort
+    } finally {
+      setHistoryLoaded(true)
+    }
+  }
 
   async function handleGenerate() {
     if (!canGenerate) return
@@ -51,6 +77,23 @@ export default function OnDemandLessonPage() {
       setGenerating(false)
     }
   }
+
+  async function handleDelete(id: number) {
+    if (deletingId === id) return
+    setDeletingId(id)
+    try {
+      const res = await apiFetch('/api/lessons/' + id, { method: 'DELETE' })
+      if (res.ok) {
+        setHistory(history.filter((h) => h.id !== id))
+      }
+    } catch {
+      // ignore
+    } finally {
+      setDeletingId(null)
+    }
+  }
+
+  useEffect(() => { void loadHistory() }, [])
 
   return (
     <div className="mx-auto max-w-2xl space-y-6 p-6">
@@ -129,7 +172,6 @@ export default function OnDemandLessonPage() {
           </button>
         </div>
       </div>
-
       {error && (
         <div className="border-fl-border bg-fl-surface/80 border px-6 py-4">
           <p className="text-fl-muted-1 font-mono text-sm">{error}</p>
@@ -141,6 +183,55 @@ export default function OnDemandLessonPage() {
           <p className="text-fl-accent font-mono text-sm animate-pulse">
             Lingu is creating your lesson... This usually takes 10-20 seconds.
           </p>
+        </div>
+      )}
+
+      {/* --- History ------------------------------------------------ */}
+      {historyLoaded && history.length > 0 && (
+        <div className="border-fl-border bg-fl-surface border p-6">
+          <p className="text-fl-fg font-mono text-lg font-bold tracking-wide">
+            Your Free Lessons
+          </p>
+
+          <div className="mt-4 space-y-2">
+            {history.map((item) => (
+              <div
+                key={item.id}
+                className="border-fl-border bg-fl-bg flex items-center gap-3 border px-4 py-3"
+              >
+                <div className="min-w-0 flex-1">
+                  <Link
+                    href={'/lesson/' + item.id}
+                    className="text-fl-fg hover:text-fl-accent block font-mono text-sm font-bold transition-colors"
+                  >
+                    {item.title}
+                  </Link>
+                  <p className="text-fl-muted-2 mt-0.5 font-mono text-xs tracking-wide">
+                    {item.lesson_type}
+                    {' · '}
+                    {item.cefr_level}
+                    {item.is_completed && (
+                      <span className="text-fl-accent ml-2">
+                        {'✓'} completed
+                      </span>
+                    )}
+                  </p>
+                </div>
+                <button
+                  onClick={() => void handleDelete(item.id)}
+                  disabled={deletingId === item.id}
+                  className={cn(
+                    'px-3 py-1.5 font-mono text-xs transition-colors',
+                    deletingId === item.id
+                      ? 'text-fl-muted-1 cursor-not-allowed'
+                      : 'text-fl-muted-2 hover:text-fl-muted-1 focus-visible:outline-fl-fg focus-visible:outline-2 focus-visible:outline-offset-2',
+                  )}
+                >
+                  {deletingId === item.id ? '...' : 'delete'}
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>

@@ -29,6 +29,7 @@ from app.schemas.lessons import (
     NativeExerciseExplanationResponse,
     NativeExerciseHintResponse,
     NativeExplanationResponse,
+    OnDemandLessonHistoryItem,
     OnDemandLessonRequest,
 )
 from app.services.language_helpers import get_language_name, get_native_language_name
@@ -244,6 +245,57 @@ async def _get_exercise_index(exercise: Exercise, lesson: Lesson, db: AsyncSessi
     if exercise_index is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Exercise not found")
     return exercise_index
+
+@router.get("/on-demand-history")
+@limiter.limit("30/minute")
+async def list_on_demand_lessons(
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> list[dict]:
+    """List all sandbox lessons for the current user, newest first."""
+    user_lang_ids = (
+        await db.execute(
+            select(UserLanguage.id).where(
+                UserLanguage.user_id == current_user.id,
+            )
+        )
+    ).scalars().all()
+
+    if not user_lang_ids:
+        return []
+
+    sandbox_plan_ids = (
+        await db.execute(
+            select(StudyPlan.id).where(
+                StudyPlan.user_language_id.in_(user_lang_ids),
+                StudyPlan.is_sandbox.is_(True),
+            )
+        )
+    ).scalars().all()
+
+    if not sandbox_plan_ids:
+        return []
+
+    rows = (
+        await db.execute(
+            select(Lesson)
+            .where(Lesson.study_plan_id.in_(sandbox_plan_ids))
+            .order_by(Lesson.id.desc())
+        )
+    ).scalars().all()
+
+    return [
+        {
+            "id": r.id,
+            "title": r.title,
+            "lesson_type": r.lesson_type,
+            "cefr_level": r.cefr_level,
+            "is_completed": r.is_completed,
+            "completed_at": r.completed_at.isoformat() if r.completed_at else None,
+        }
+        for r in rows
+    ]
 
 
 @router.get("/{lesson_id}", response_model=LessonDetailResponse)
@@ -996,3 +1048,40 @@ async def create_on_demand_lesson(
         ),
         exercises=exercise_responses,
     )
+
+
+# ── Sandbox Lesson History & Deletion ─────────────────────────────────────
+
+
+
+
+
+
+@router.delete("/{lesson_id}", status_code=status.HTTP_204_NO_CONTENT)
+@limiter.limit("10/minute")
+async def delete_lesson(
+    request: Request,
+    lesson_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> None:
+    """Delete a sandbox lesson. Only sandbox (on-demand) lessons can be deleted."""
+    from app.models.user_language import UserLanguage
+
+    lesson = await db.get(Lesson, lesson_id)
+    if not lesson:
+        raise HTTPException(status_code=404, detail="Lesson not found")
+
+    plan = await db.get(StudyPlan, lesson.study_plan_id)
+    if not plan or not plan.is_sandbox:
+        raise HTTPException(
+            status_code=403,
+            detail="Only on-demand (sandbox) lessons can be deleted",
+        )
+
+    user_lang = await db.get(UserLanguage, plan.user_language_id)
+    if not user_lang or user_lang.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not your lesson")
+
+    await db.delete(lesson)
+    await db.commit()

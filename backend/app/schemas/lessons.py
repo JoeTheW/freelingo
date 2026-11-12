@@ -191,3 +191,18 @@ class NativeExerciseExplanationResponse(BaseModel):
 
 class NativeExerciseHintResponse(BaseModel):
     native_hint: str
+
+
+class OnDemandLessonHistoryItem(BaseModel):
+    id: int
+    title: str
+    lesson_type: str
+    cefr_level: str
+    is_completed: bool
+    completed_at: datetime | None = None
+
+    model_config = {"from_attributes": True}
+
+    @field_serializer("completed_at")
+    def serialize_completed_at(self, v: datetime | None, _info):
+        return v.isoformat() if v else None
