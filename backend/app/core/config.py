@@ -34,7 +34,11 @@ class Settings(BaseSettings):
     STT_BASE_URL: str = "http://whisper:9000"
     OPENAI_STT_MODEL: str = "whisper-1"
     RATE_LIMIT_ENABLED: bool = True
-    CORS_ORIGINS: list[str] = ["http://localhost:3131"]
+    CORS_ORIGINS: list[str] = [
+        "http://localhost:3131",
+        "http://192.168.1.80:3131",
+        "http://joepc:3131",
+    ]
     COOKIE_SECURE: bool = False
     LOG_LEVEL: str = "INFO"
 

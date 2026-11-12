@@ -5,7 +5,7 @@ const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts')
 
 const nextConfig: NextConfig = {
   reactStrictMode: false,
-  allowedDevOrigins: ['192.168.1.80'],
+  allowedDevOrigins: ['192.168.1.80', 'joepc'],
   poweredByHeader: false,
   output: 'standalone',
   webpack(config, { isServer }) {
@@ -59,6 +59,14 @@ const nextConfig: NextConfig = {
       {
         source: '/(.*)',
         headers,
+      },
+      // Cache VAD model and ONNX WASM files aggressively so the phone
+      // doesn't re-download them over Tailscale on every conversation session.
+      {
+        source: '/vad/(.*)',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
+        ],
       },
     ]
   },

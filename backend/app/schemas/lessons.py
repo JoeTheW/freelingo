@@ -106,6 +106,13 @@ class LessonDetailResponse(BaseModel):
     exercises: list[ExerciseResponse]
 
 
+class OnDemandLessonRequest(BaseModel):
+    query: str
+    cefr_level: str = "A2"
+    lesson_type: str = "grammar"
+    target_language: str | None = None
+
+
 class ExerciseAnswerRequest(BaseModel):
     answer: str
 

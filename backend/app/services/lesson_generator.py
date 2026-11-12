@@ -202,6 +202,56 @@ async def generate_lesson(
     return lesson
 
 
+async def generate_on_demand_lesson(
+    cefr_level: str,
+    lesson_type: str,
+    student_query: str,
+    target_language: str = "en-GB",
+    native_language: str | None = None,
+) -> LessonContent:
+    """Generate a custom lesson based on a student's free-text request.
+
+    Reuses the main LESSON_GENERATION_PROMPT with on-demand defaults for
+    curriculum-specific parameters (grammar_points, vocabulary_set_ids, etc.)
+    so the LLM sees the same high-quality JSON schema examples.
+    """
+    target_language_name = get_language_name(target_language)
+    native_language_name = get_native_language_name(native_language) if native_language else "none"
+    language_prompt_overlay = get_language_prompt_overlay(target_language)
+
+    prompt = build_lesson_generation_prompt(
+        cefr_level=cefr_level,
+        target_language_name=target_language_name,
+        native_language_name=native_language_name,
+        lesson_type=lesson_type,
+        topic=student_query,
+        unit_id="on-demand",
+        grammar_points="none specified",
+        vocabulary_set_ids="general",
+        week=999,
+        day=1,
+        valid_slugs="",
+        language_prompt_overlay=language_prompt_overlay,
+        previous_lessons_summary="",
+    )
+
+    lesson = await llm_adapter.structured_output(
+        [{"role": "system", "content": prompt}],
+        LessonContent,
+    )
+
+    # No curriculum exists for on-demand sandbox lessons
+    lesson.grammar_refs = []
+
+    for ex in lesson.exercises:
+        if ex.type == "fill_blank" and "___" not in ex.question:
+            if ex.explanation and "___" in ex.explanation:
+                ex.question, ex.explanation = ex.explanation, ex.question
+        if hint_reveals_answer(ex.native_hint, ex.correct):
+            ex.native_hint = None
+    return lesson
+
+
 async def regenerate_exercise(
     *,
     cefr_level: str,

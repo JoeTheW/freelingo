@@ -49,6 +49,7 @@ class StudyPlan(Base):
     progress_day: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     generated_plan: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    is_sandbox: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     completion_test_taken: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     completion_test_score: Mapped[float | None] = mapped_column(Float, nullable=True)
     completion_test_recommendation: Mapped[str | None] = mapped_column(String(20), nullable=True)

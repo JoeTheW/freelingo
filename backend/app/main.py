@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from logging.handlers import RotatingFileHandler
 import os
 from contextlib import asynccontextmanager
 
@@ -14,11 +15,29 @@ from alembic import command
 from app.core.config import settings
 from app.core.limiter import limiter
 
+_LOG_DIR = "/app/logs"
+os.makedirs(_LOG_DIR, exist_ok=True)
+
 logging.basicConfig(
     level=settings.LOG_LEVEL.upper(),
     format="%(asctime)s %(levelname)s %(name)s: %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
 )
+
+_file_handler = RotatingFileHandler(
+    filename=os.path.join(_LOG_DIR, "freelingo.log"),
+    maxBytes=10 * 1024 * 1024,  # 10 MB
+    backupCount=5,
+    encoding="utf-8",
+)
+_file_handler.setLevel(logging.DEBUG)
+_file_handler.setFormatter(
+    logging.Formatter(
+        "%(asctime)s %(levelname)s %(name)s: %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
+)
+logging.getLogger("").addHandler(_file_handler)
 
 _AVATARS_DIR = "/app/avatars"
 _TTS_PREVIEWS_DIR = "/app/tts_previews"

@@ -18,6 +18,7 @@ from app.core.limiter import limiter
 from app.models.lesson import Exercise, Lesson
 from app.models.study_plan import StudyPlan
 from app.models.user import User
+from app.models.user_language import UserLanguage
 from app.schemas.lessons import (
     ExerciseAnswerRequest,
     ExerciseAnswerResponse,
@@ -28,12 +29,14 @@ from app.schemas.lessons import (
     NativeExerciseExplanationResponse,
     NativeExerciseHintResponse,
     NativeExplanationResponse,
+    OnDemandLessonRequest,
 )
 from app.services.language_helpers import get_language_name, get_native_language_name
 from app.services.lesson_generator import (
     evaluate_fill_blank,
     evaluate_free_write,
     evaluate_pronunciation,
+    generate_on_demand_lesson,
     hint_reveals_answer,
     regenerate_exercise,
 )
@@ -819,3 +822,177 @@ async def generate_native_explanation(
     await db.refresh(lesson)
 
     return {"native_explanation": native_exp}
+
+
+# ── Sandbox / On-Demand Lessons ─────────────────────────────────────────────────
+
+
+async def _get_or_create_sandbox_plan(
+    db: AsyncSession,
+    user: User,
+    target_language: str,
+) -> StudyPlan:
+    """Find or create a sandbox study plan for on-demand lessons.
+
+    One sandbox plan exists per user language. It sits alongside the real
+    active plan with ``is_active=False`` so it doesn't conflict with the
+    unique-active-plan constraint.
+    """
+    from app.models.user_language import UserLanguage
+
+    ul_result = await db.execute(
+        select(UserLanguage).where(
+            UserLanguage.user_id == user.id,
+            UserLanguage.target_language == target_language,
+        ).limit(1)
+    )
+    user_lang = ul_result.scalar_one_or_none()
+
+    if not user_lang:
+        user_lang = UserLanguage(
+            user_id=user.id,
+            target_language=target_language,
+            is_active=False,
+        )
+        db.add(user_lang)
+        await db.flush()
+
+    result = await db.execute(
+        select(StudyPlan).where(
+            StudyPlan.user_language_id == user_lang.id,
+            StudyPlan.is_sandbox.is_(True),
+        ).limit(1)
+    )
+    plan = result.scalar_one_or_none()
+    if plan:
+        return plan
+
+    plan = StudyPlan(
+        user_id=user.id,
+        user_language_id=user_lang.id,
+        cefr_level="A1",
+        target_language=target_language,
+        goals=[],
+        duration_weeks=1,
+        days_per_week=1,
+        current_unit="",
+        progress_day=0,
+        generated_plan={"sandbox": True},
+        is_active=False,
+        is_sandbox=True,
+    )
+    db.add(plan)
+    await db.flush()
+    return plan
+
+
+@router.post("/on-demand", response_model=LessonDetailResponse)
+@limiter.limit("10/minute")
+async def create_on_demand_lesson(
+    request: Request,
+    body: OnDemandLessonRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Generate an on-demand lesson from a free-text student query."""
+    query = body.query.strip()
+    if not query:
+        raise HTTPException(status_code=400, detail="Query cannot be empty")
+
+    target_language = body.target_language or current_user.target_language or "en-GB"
+
+    # 1. Generate the lesson content via LLM
+    lesson_content = await generate_on_demand_lesson(
+        cefr_level=body.cefr_level,
+        lesson_type=body.lesson_type,
+        student_query=query,
+        target_language=target_language,
+        native_language=current_user.native_language,
+    )
+
+    # 2. Get or create the sandbox plan
+    plan = await _get_or_create_sandbox_plan(db, current_user, target_language)
+
+    # 3. Find the next available day number (sandbox lessons use week=999)
+    existing = await db.execute(
+        select(Lesson).where(
+            Lesson.study_plan_id == plan.id,
+        ).order_by(Lesson.day_number.desc()).limit(1)
+    )
+    last_lesson = existing.scalar_one_or_none()
+    next_day = (last_lesson.day_number + 1) if last_lesson else 1
+
+    # 4. Persist the lesson
+    lesson = Lesson(
+        study_plan_id=plan.id,
+        title=lesson_content.title or query[:80],
+        lesson_type=body.lesson_type,
+        cefr_level=body.cefr_level,
+        week_number=999,
+        day_number=next_day,
+        unit_id="on-demand",
+        content=lesson_content.model_dump(),
+    )
+    db.add(lesson)
+    await db.flush()
+    await db.refresh(lesson)
+
+    # 5. Persist exercises
+    from app.models.lesson import Exercise
+
+    exercises: list[Exercise] = []
+    for ex_data in lesson_content.exercises:
+        ex = Exercise(
+            lesson_id=lesson.id,
+            exercise_type=ex_data.type,
+            question=ex_data.question,
+            options=ex_data.options,
+            correct_answer=ex_data.correct,
+            explanation=ex_data.explanation,
+        )
+        db.add(ex)
+        exercises.append(ex)
+
+    await db.commit()
+    await db.refresh(lesson)
+    for ex in exercises:
+        await db.refresh(ex)
+
+    # 6. Build response -- native_explanation and native_hint live in the
+    #    LessonContent exercises (Pydantic), not on the Exercise ORM model.
+    exercise_responses: list[ExerciseResponse] = []
+    for ex, ex_data in zip(exercises, lesson_content.exercises, strict=False):
+        exercise_responses.append(
+            ExerciseResponse(
+                id=ex.id,
+                lesson_id=lesson.id,
+                exercise_type=ex.exercise_type,
+                question=ex.question,
+                options=ex.options,
+                correct_answer=ex.correct_answer,
+                user_answer=ex.user_answer,
+                score=ex.score,
+                feedback=ex.feedback,
+                corrections=ex.corrections,
+                explanation=ex.explanation,
+                native_explanation=ex_data.native_explanation,
+                native_hint=ex_data.native_hint,
+                answered_at=ex.answered_at,
+            )
+        )
+
+    return LessonDetailResponse(
+        lesson=LessonResponse(
+            id=lesson.id,
+            study_plan_id=plan.id,
+            title=lesson.title,
+            lesson_type=lesson.lesson_type,
+            cefr_level=lesson.cefr_level,
+            week_number=lesson.week_number,
+            day_number=lesson.day_number,
+            content=lesson.content,
+            is_completed=lesson.is_completed,
+            completed_at=lesson.completed_at,
+        ),
+        exercises=exercise_responses,
+    )

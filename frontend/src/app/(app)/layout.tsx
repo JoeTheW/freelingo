@@ -25,6 +25,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const mainNavItems = [
     { href: '/dashboard', label: tNav('home') },
     { href: '/plan', label: tNav('myPlan') },
+    { href: '/on-demand', label: 'Free Lesson' },
     { href: '/progress', label: tNav('progress') },
     { href: '/flashcards', label: tNav('flashcards') },
     { href: '/chat', label: tNav('tutor') },

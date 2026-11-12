@@ -550,6 +550,27 @@ def build_lesson_generation_prompt(
     )
 
 
+def build_on_demand_lesson_prompt(
+    *,
+    cefr_level: str,
+    target_language_name: str,
+    native_language_name: str,
+    lesson_type: str,
+    student_query: str,
+    language_prompt_overlay: str = "",
+) -> str:
+    from app.services.prompts.lesson import build_lesson_type_guidance
+    guidance = build_lesson_type_guidance(lesson_type)
+    return ON_DEMAND_LESSON_PROMPT.format(
+        lesson_type_guidance=guidance,
+        cefr_level=cefr_level,
+        target_language_name=target_language_name,
+        native_language_name=native_language_name,
+        lesson_type=lesson_type,
+        student_query=student_query,
+        language_prompt_overlay=language_prompt_overlay,
+    )
+
 def build_fill_blank_eval_prompt(
     *,
     cefr_level: str,
@@ -798,5 +819,128 @@ def build_regenerate_exercise_prompt(
         lesson_vocabulary=lesson_vocabulary,
         invalid_exercise=invalid_exercise,
         options_schema=options_schema,
+        language_prompt_overlay=language_prompt_overlay,
+    )
+
+# === ON-DEMAND LESSON PROMPT ===
+ON_DEMAND_LESSON_PROMPT = """
+You are an expert {target_language_name} teacher creating a custom lesson.
+
+Parameters:
+- CEFR level: {cefr_level}
+- Target language: {target_language_name}
+- Native language: {native_language_name}
+- Lesson type focus: {lesson_type}
+- Student request: {student_query}
+
+{language_prompt_overlay}
+{lesson_type_guidance}
+
+STRICT CONSTRAINTS:
+1. Everything must be at or below {cefr_level}.
+2. Address the student request directly.
+3. Use correct as the answer field name (NOT correct_answer).
+4. fill_blank question MUST contain ___ .
+5. Every vocabulary item MUST include word and definition (both required).
+6. grammar_refs must be a list of plain strings.
+7. Include native_explanation as a JSON object (NOT a string).
+8. For multiple_choice: options must NOT have letter/number prefixes.
+
+The lesson should be 15-25 min. Include 4-6 exercises.
+
+Return JSON using this exact schema:
+{{
+  "lesson_type": "{lesson_type}",
+  "title": "[lesson title in {target_language_name}]",
+  "cefr_level": "{cefr_level}",
+  "unit_id": "on-demand",
+  "explanation": {{
+    "text": "[thorough explanation of the topic in {target_language_name}]",
+    "key_points": [
+      "[first key takeaway in {target_language_name}]",
+      "[second key takeaway in {target_language_name}]"
+    ],
+    "examples": [
+      {{"sentence": "[natural example sentence in {target_language_name}]", "note": "[what this example shows]"}}
+    ]
+  }},
+  "native_explanation": {{
+    "text": "[same explanation translated into {native_language_name}]",
+    "key_points": [
+      "[first key takeaway in {native_language_name}]",
+      "[second key takeaway in {native_language_name}]"
+    ],
+    "examples": [
+      {{"sentence": "[same example sentence in {target_language_name}]", "note": "[note translated into {native_language_name}]"}}
+    ],
+    "common_traps": [
+      {{"mistake": "[common learner mistake in {native_language_name}]", "fix": "[how to avoid or correct it in {native_language_name}]"}}
+    ],
+    "mini_glossary": [
+      {{"term": "[useful {target_language_name} word or phrase]", "meaning": "[meaning in {native_language_name}]", "note": "[optional study note in {native_language_name}]"}}
+    ]
+  }},
+  "exercises": [
+    {{
+      "type": "multiple_choice",
+      "question": "[sentence in {target_language_name} with a gap, or a direct question]",
+      "options": ["[option 1]", "[option 2]", "[option 3]", "[option 4]"],
+      "correct": "[the one correct option, copied exactly as written above]",
+      "explanation": "[why this is correct, in {target_language_name}]",
+      "native_explanation": "[why this is correct, in {native_language_name}]",
+      "native_hint": "[short pre-answer hint in {native_language_name}]"
+    }},
+    {{
+      "type": "fill_blank",
+      "question": "[sentence in {target_language_name} with ___ marking the blank]",
+      "options": null,
+      "correct": "[the word or phrase that fills the blank]",
+      "explanation": "[grammar rule behind the answer, in {target_language_name}]",
+      "native_explanation": "[grammar rule behind the answer, in {native_language_name}]",
+      "native_hint": "[short pre-answer hint in {native_language_name}]"
+    }},
+    {{
+      "type": "free_write",
+      "question": "[writing prompt in {target_language_name} with a specific task]",
+      "options": ["[guideline or constraint]", "[another guideline]"],
+      "correct": "[model answer in {target_language_name}]",
+      "explanation": "[which skill or grammar point this evaluates]",
+      "native_explanation": "[which skill or grammar point this evaluates, in {native_language_name}]",
+      "native_hint": "[short pre-answer writing strategy in {native_language_name}]"
+    }}
+  ],
+  "vocabulary": [
+    {{
+      "word": "[word or phrase in {target_language_name}]",
+      "definition": "[simple definition in {target_language_name}]",
+      "translation": "[direct meaning in {native_language_name}]",
+      "example": "[example sentence in {target_language_name}]",
+      "example_translation": "[natural translation in {native_language_name}]",
+      "note": "[optional usage note in {native_language_name}]",
+      "reading": "[optional pronunciation guide]"
+    }}
+  ],
+  "grammar_refs": []
+}}"""
+
+
+def build_on_demand_lesson_prompt(
+    *,
+    cefr_level: str,
+    target_language_name: str,
+    native_language_name: str,
+    lesson_type: str,
+    student_query: str,
+    language_prompt_overlay: str = "",
+) -> str:
+    from app.services.prompts.lesson import build_lesson_type_guidance
+    guidance = build_lesson_type_guidance(lesson_type)
+    return ON_DEMAND_LESSON_PROMPT.format(
+        lesson_type_guidance=guidance,
+        cefr_level=cefr_level,
+        target_language_name=target_language_name,
+        native_language_name=native_language_name,
+        lesson_type=lesson_type,
+        student_query=student_query,
         language_prompt_overlay=language_prompt_overlay,
     )

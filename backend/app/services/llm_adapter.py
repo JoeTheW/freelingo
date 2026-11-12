@@ -737,7 +737,22 @@ class LLMAdapter:
             }
         ]
 
+        # --- debug logging ---
+        logger.debug(
+            "LLM prompt sent",
+            schema_name=schema.__name__,
+            messages_count=len(messages),
+            prompt_truncated=(
+                repr(messages[0].get("content", ""))[:2000]
+                if messages
+                else ""
+            ),
+        )
+        # ----------------------
+
         raw = await self._call_with_retry(self._do_chat, messages_with_format, False)
+
+        logger.debug("LLM raw response (first attempt)", raw_response=repr(raw)[:3000])
 
         cleaned = raw.strip()
         if cleaned.startswith("```"):
@@ -749,6 +764,11 @@ class LLMAdapter:
         try:
             return schema.model_validate(json.loads(cleaned))
         except (json.JSONDecodeError, ValueError) as e:
+            logger.debug(
+                "LLM validation failed, sending retry",
+                error=str(e)[:500],
+                raw_response_prefix=repr(raw)[:2000],
+            )
             retry_messages = messages_with_format + [
                 {
                     "role": "user",
@@ -764,8 +784,17 @@ class LLMAdapter:
                     .removesuffix("```")
                     .strip()
                 )
+                logger.debug(
+                    "LLM raw response (retry attempt)",
+                    raw_response=repr(raw2)[:3000],
+                )
                 return schema.model_validate(json.loads(cleaned2))
             except Exception as e2:
+                logger.debug(
+                    "LLM retry also failed",
+                    error=str(e2)[:500],
+                    raw_response=repr(raw2 if "raw2" in locals() else raw)[:2000],
+                )
                 raise LLMResponseError(
                     f"Failed to parse JSON after retry: {str(e2)}",
                     raw_response=raw2 if "raw2" in locals() else raw,
